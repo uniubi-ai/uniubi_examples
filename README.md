@@ -1,45 +1,62 @@
 # Uniubi Examples
 
-Uniubi 二次开发示例索引仓。当前版本的基础 demo 随对应代码仓一起维护，本仓提供统一索引，指向 C++ / Python / ROS 2 各自仓库中的版本同步示例。
+Uniubi 机器人二次开发示例。你可以从控制方式或开发语言选择合适的入口；需要组合多个 SDK、ROS 2 或机器人能力的完整应用时，可以在本仓库中扩展为独立示例。
 
-后续出现跨多个仓库、不能自然归属到单一 SDK 仓的组合 demo 时，放在本仓维护。完整接口教程、DDS 直连接入说明和跨仓开发路径统一维护在 [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs)。
+## 选择开发入口
 
-## 示例索引
+| 开发目标 | 推荐入口 |
+|---|---|
+| 调用站立、趴下、行走等机器人内置能力 | [High-level 开发导读](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/high-level-control.md) |
+| 运行自己的控制策略，直接控制关节位置或扭矩 | [Low-level 开发导读](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/low-level-control.md) |
+| 通过 ROS 2 topic / service 使用机器人运动能力 | [ROS 2 Motion Bridge 导读](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/ros2-motion-bridge.md) |
+| 订阅摄像头、麦克风或编码帧 | [Media SDK 文档](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_media_sdk.md) |
+| 训练、导出并部署 Low-level 策略 | [策略训练、导出与回放](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/how-to/train-export-replay.md) |
 
-| 示例类型 | 实际位置 | 依赖 | 默认安全级别 |
-|---|---|---|---|
-| C++ SDK | [`uniubi_robot_sdk/examples`](https://github.com/uniubi-ai/uniubi_robot_sdk/tree/main/examples) | [`uniubi_robot_sdk`](https://github.com/uniubi-ai/uniubi_robot_sdk) | High-level / Low-level 均为交互 CLI，启动不自动执行动作；媒体订阅仅 aarch64 板内 |
-| Python SDK | [`uniubi_robot_sdk_py/examples`](https://github.com/uniubi-ai/uniubi_robot_sdk_py/tree/main/examples) | [`uniubi_robot_sdk_py`](https://github.com/uniubi-ai/uniubi_robot_sdk_py) + [`uniubi_robot_sdk`](https://github.com/uniubi-ai/uniubi_robot_sdk) | 高级首跑安全动作；低级零力矩仅限吊架 / 急停条件；媒体订阅仅 aarch64 板内且 `sdk.MEDIA_ENABLED=True` |
-| ROS 2 | [`uniubi_ros2`](https://github.com/uniubi-ai/uniubi_ros2/tree/main/src/uniubi_motion_bridge) | [`uniubi_robot_msgs`](https://github.com/uniubi-ai/uniubi_robot_msgs) + [`uniubi_ros2`](https://github.com/uniubi-ai/uniubi_ros2) | Motion bridge 标准 topic；`uniubi_motion_client` 自定义 C++ 流程；默认先做只读验证 |
+## C++ 示例
 
-## 使用方式
+完整构建和运行说明见 [`uniubi_robot_sdk/examples`](https://github.com/uniubi-ai/uniubi_robot_sdk/tree/main/examples)。
 
-先按对应仓库 README 完成安装并运行示例：
+- [High-level 交互控制](https://github.com/uniubi-ai/uniubi_robot_sdk/blob/main/examples/example_highlevel.cpp)：查询状态、传感器和里程计，调用机器人内置动作。
+- [Low-level 姿态控制](https://github.com/uniubi-ai/uniubi_robot_sdk/blob/main/examples/example_lowlevel.cpp)：读取电机布局，验证站立、趴下和阻尼控制。
+- [Low-level TensorRT 策略](https://github.com/uniubi-ai/uniubi_robot_sdk/blob/main/examples/example_lowlevel_tensorrt.cpp)：输入 ONNX，每次启动构建 FP32 TensorRT engine，并以 50 Hz 运行策略。
+- [MediaBus 帧订阅](https://github.com/uniubi-ai/uniubi_robot_sdk/blob/main/examples/example_media_frames.cpp)：在 aarch64 板内订阅和保存音视频帧。
 
-当前设备上的 C++ / Python SDK 程序需要以 root 权限运行。运行命令应按对应 SDK README 使用 `sudo env` 显式保留 `LD_LIBRARY_PATH`；大脑上的 Python 示例直接使用系统 `python3`。源码直用模式才需要额外传入 `PYTHONPATH`。
+[进入 C++ SDK](https://github.com/uniubi-ai/uniubi_robot_sdk)
 
-- C++ 示例：构建 [`uniubi_robot_sdk`](https://github.com/uniubi-ai/uniubi_robot_sdk)，先运行 `example_highlevel --read-only`，在 `highlevel>` 中做状态/传感器/里程计验证；`example_lowlevel` 启动后同样先用 `status`、`motors` 检查，再执行 `stand`、`lie`、`damping`、`release`，Low-level 姿态命令会按需使能。两个 CLI 均不会自动启动动作；`example_media_frames` 仅用于 aarch64 板内本地部署。
-- Python 示例：安装 [`uniubi_robot_sdk_py`](https://github.com/uniubi-ai/uniubi_robot_sdk_py)，并让 `UNIUBI_SDK_ROOT` 指向 [`uniubi_robot_sdk`](https://github.com/uniubi-ai/uniubi_robot_sdk)。`examples/example_highlevel.py --read-only` 是与 C++ 风格一致的 `highlevel>` 交互 CLI，先用 `status`、`motors`、`sensor 5`、`odom 5` 做只读验证，再按需 `take/start/send/stop/release`；`examples/example_lowlevel.py` 仍用于 Low-level 联调。`examples/example_media_frames.py` 仅用于 aarch64 板内本地部署，并要求当前 wheel 的 `sdk.MEDIA_ENABLED=True`。
-- ROS 2 示例：先构建 [`uniubi_robot_msgs`](https://github.com/uniubi-ai/uniubi_robot_msgs)，再构建 [`uniubi_ros2`](https://github.com/uniubi-ai/uniubi_ros2) 的 `uniubi_motion_bridge` 和 `uniubi_motion_client` 包；普通业务默认从 Motion bridge 开始。
-- DDS 直连接入：按 [`uniubi-docs/docs/uniubi_robot_dds_api.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_robot_dds_api.md) 配置 Domain、QoS、topic 和 `device_id`。
+## Python 示例
 
-## 安全策略
+完整安装和运行说明见 [`uniubi_robot_sdk_py/examples`](https://github.com/uniubi-ai/uniubi_robot_sdk_py/tree/main/examples)。
 
-真实机器人首次联调默认只执行站立、趴下等低风险动作。`walking`、`move`、`bipedStand`、`handstand`、`jump*`、`damp` 等高风险运动动作应单独放入显式确认的示例或测试流程。
+- [High-level 交互控制](https://github.com/uniubi-ai/uniubi_robot_sdk_py/blob/main/examples/example_highlevel.py)：查询状态、传感器和里程计，调用机器人内置动作。
+- [Low-level 控制](https://github.com/uniubi-ai/uniubi_robot_sdk_py/blob/main/examples/example_lowlevel.py)：演示 Low-level 连接、观测和控制帧下发。
+- [Low-level TensorRT 策略](https://github.com/uniubi-ai/uniubi_robot_sdk_py/blob/main/examples/example_lowlevel_tensorrt.py)：在 Orin 上从 ONNX 构建 FP32 TensorRT engine，不依赖 PyTorch。
+- [MediaBus 帧订阅](https://github.com/uniubi-ai/uniubi_robot_sdk_py/blob/main/examples/example_media_frames.py)：在 aarch64 板内订阅和保存音视频帧。
 
-通用 Low-level 姿态和零力矩示例必须将机器狗可靠固定在安全吊架上，保持四脚完全腾空。包含 `walk` 的 TensorRT 策略示例应分两阶段验证：吊架上只验证 `stand` 和 `lay`，确认正常后移到空旷、平整、无障碍地面再验证 `walk`。不要在四脚腾空时执行 `walk`；测试过程中保持急停可触达并由专人值守。
+[进入 Python SDK](https://github.com/uniubi-ai/uniubi_robot_sdk_py)
 
-## 文档
+## ROS 2 示例
 
-完整接口说明见：
+- [`uniubi_motion_bridge`](https://github.com/uniubi-ai/uniubi_ros2/tree/main/src/uniubi_motion_bridge)：将 High-level 运动能力映射为 ROS 2 topic 和 service。
+- [`uniubi_motion_client`](https://github.com/uniubi-ai/uniubi_ros2/tree/main/src/uniubi_motion_client)：使用 ROS 2 接口查询状态和控制机器人。
+- [`uniubi_robot_msgs`](https://github.com/uniubi-ai/uniubi_robot_msgs)：机器人消息、service 和 action 定义。
 
-- [`uniubi-docs`](https://github.com/uniubi-ai/uniubi-docs)
-- [`uniubi-docs/docs/uniubi_high_level_sdk.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.md)
-- [`uniubi-docs/docs/uniubi_low_level_sdk.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)
-- [`uniubi-docs/docs/uniubi_media_sdk.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_media_sdk.md)
-- [`uniubi-docs/docs/uniubi_robot_dds_api.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_robot_dds_api.md)
-- [`uniubi-docs/docs/ros2_dds_interop_overview.md`](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/ros2_dds_interop_overview.md)
+[进入 ROS 2 仓库](https://github.com/uniubi-ai/uniubi_ros2)
+
+## 开发文档
+
+- [Uniubi 开发文档](https://github.com/uniubi-ai/uniubi-docs)
+- [SDK 构建与安装](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/BUILD.md)
+- [High-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_high_level_sdk.md)
+- [Low-level SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_low_level_sdk.md)
+- [Media SDK API](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/uniubi_media_sdk.md)
+- [DDS 与 ROS 2 互操作](https://github.com/uniubi-ai/uniubi-docs/blob/main/docs/ros2_dds_interop_overview.md)
+
+## 实机安全
+
+首次实机联调应从只读查询和低风险姿态开始，并始终保持急停可触达、有人值守。
+
+通用 Low-level 姿态和零力矩示例应在安全吊架上验证，保持四脚完全腾空。包含 `walk` 的 TensorRT 策略采用分阶段验证：吊架上只执行 `stand` 和 `lay`；确认姿态及关节方向正常后，将机器狗放到空旷、平整、无障碍地面，再执行 `stand` → `walk` → `stop` → `lay`。不要在四脚腾空时执行 `walk`。
 
 ## 许可证
 
-本仓库中的 UniUbi 原创示例和文档使用 Apache License 2.0。详见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE)。
+本仓库中的 Uniubi 原创示例和文档使用 Apache License 2.0。详见 [LICENSE](LICENSE) 和 [NOTICE](NOTICE)。
