@@ -16,6 +16,8 @@ Uniubi 二次开发示例索引仓。当前版本的基础 demo 随对应代码�
 
 先按对应仓库 README 完成安装并运行示例：
 
+当前设备上的 C++ / Python SDK 程序需要以 root 权限运行。运行命令应按对应 SDK README 使用 `sudo env` 显式保留 `LD_LIBRARY_PATH`；大脑上的 Python 示例直接使用系统 `python3`。源码直用模式才需要额外传入 `PYTHONPATH`。
+
 - C++ 示例：构建 [`uniubi_robot_sdk`](https://github.com/uniubi-ai/uniubi_robot_sdk)，先运行 `example_highlevel --read-only`，在 `highlevel>` 中做状态/传感器/里程计验证；`example_lowlevel` 启动后同样先用 `status`、`motors` 检查，再执行 `stand`、`lie`、`damping`、`release`，Low-level 姿态命令会按需使能。两个 CLI 均不会自动启动动作；`example_media_frames` 仅用于 aarch64 板内本地部署。
 - Python 示例：安装 [`uniubi_robot_sdk_py`](https://github.com/uniubi-ai/uniubi_robot_sdk_py)，并让 `UNIUBI_SDK_ROOT` 指向 [`uniubi_robot_sdk`](https://github.com/uniubi-ai/uniubi_robot_sdk)。`examples/example_highlevel.py --read-only` 是与 C++ 风格一致的 `highlevel>` 交互 CLI，先用 `status`、`motors`、`sensor 5`、`odom 5` 做只读验证，再按需 `take/start/send/stop/release`；`examples/example_lowlevel.py` 仍用于 Low-level 联调。`examples/example_media_frames.py` 仅用于 aarch64 板内本地部署，并要求当前 wheel 的 `sdk.MEDIA_ENABLED=True`。
 - ROS 2 示例：先构建 [`uniubi_robot_msgs`](https://github.com/uniubi-ai/uniubi_robot_msgs)，再构建 [`uniubi_ros2`](https://github.com/uniubi-ai/uniubi_ros2) 的 `uniubi_motion_bridge` 和 `uniubi_motion_client` 包；普通业务默认从 Motion bridge 开始。
